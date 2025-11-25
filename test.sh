@@ -22,6 +22,12 @@ KEX_ALGOS=(
     "sntrup761x25519-sha512"
 )
 
+SUMMARY_FILE=~/kex_results_summary.txt
+
+# Initialiser fichier
+echo "Algorithme                          | Réussites | Temps moyen (ms)" > "$SUMMARY_FILE"
+echo "------------------------------------|-----------|------------------" >> "$SUMMARY_FILE"
+
 echo "Serveur : $SERVER:$PORT"
 echo "Utilisateur : $USER"
 echo "Clé : $KEY"
@@ -55,7 +61,6 @@ for kex in "${KEX_ALGOS[@]}"; do
     for i in $(seq 1 $ITERATIONS); do
         echo -n "  Essai $i/$ITERATIONS... "
         
-        # Mesurer le temps
         start=$(date +%s%N)
         
         ssh -p $PORT \
@@ -78,7 +83,6 @@ for kex in "${KEX_ALGOS[@]}"; do
             echo "ÉCHEC ❌"
         fi
         
-        # Petite pause entre les tests
         sleep 0.3
     done
     
@@ -89,9 +93,15 @@ for kex in "${KEX_ALGOS[@]}"; do
         echo "  ├─ Réussis : $success_count/$ITERATIONS"
         echo "  ├─ Temps total : ${total_time}ms"
         echo "  └─ Temps moyen : ${avg}ms"
+
+        # 🔥 Sauvegarde dans le fichier
+        printf "%-35s | %-9s | %-16s\n" "$kex" "$success_count/$ITERATIONS" "$avg" >> "$SUMMARY_FILE"
+
     else
         echo ""
         echo "  ❌ Aucune connexion réussie"
+
+        printf "%-35s | %-9s | %-16s\n" "$kex" "0/$ITERATIONS" "N/A" >> "$SUMMARY_FILE"
     fi
     
     echo ""
@@ -101,11 +111,7 @@ echo "=========================================="
 echo "  RÉCAPITULATIF DES PERFORMANCES"
 echo "=========================================="
 echo ""
+cat "$SUMMARY_FILE"
 
-# Créer un fichier de résultats
-cat > ~/kex_results_summary.txt << 'RESULTS'
-Algorithme                          | Temps moyen (ms)
-------------------------------------|------------------
-RESULTS
-
-echo "Résultats sauvegardés dans ~/kex_results_summary.txt"
+echo ""
+echo "📁 Résultats enregistrés dans : $SUMMARY_FILE"
